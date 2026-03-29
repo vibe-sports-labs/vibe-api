@@ -1,0 +1,39 @@
+services:
+  # MongoDB com Script de Inicialização de Replica Set
+  mongodb:
+    image: mongo:7.0
+    container_name: vibe-mongodb
+    ports:
+      - "27017:27017"
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "rs.initiate()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongodb_data:/data/db
+
+  # RabbitMQ com Painel de Gerenciamento (Porta 15672)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: vibe-rabbitmq
+    ports:
+      - "5672:5672"   # Porta do Broker
+      - "15672:15672" # Porta da UI (user: guest / pass: guest)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Redis para Cache e Locks de Inscrição
+  redis:
+    image: redis:alpine
+    container_name: vibe-redis
+    ports:
+      - "63379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
+  redis_data:
