@@ -1,6 +1,5 @@
 package com.vibe.application.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.vibe.domain.Match
 import com.vibe.domain.OutboxEntry
 import com.vibe.infrastructure.repository.MatchRepository
@@ -8,6 +7,7 @@ import com.vibe.infrastructure.repository.OutboxRepository
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import tools.jackson.databind.ObjectMapper
 
 @Service
 class MatchService(

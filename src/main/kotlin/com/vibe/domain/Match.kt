@@ -15,7 +15,7 @@ data class Match(
     val id: String? = null,
     val title: String,
     val organizerId: String,
-    val sport: Sport,
+    val sportId: String,
     @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
     val location: GeoJsonPoint,
     val addressName: String,

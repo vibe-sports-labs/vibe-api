@@ -1,4 +1,4 @@
-package com.vibe.vibe_api
+package com.vibe
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
