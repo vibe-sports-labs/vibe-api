@@ -10,17 +10,18 @@ import org.springframework.data.mongodb.core.geo.GeoJsonPoint
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.security.Principal
 
 @RestController
 @RequestMapping("/api/v1/matches")
 @Tag(name = "Matches", description = "Gerenciamento de partidas e geolocalização")
-@CrossOrigin(origins = ["*"])
 class MatchControllerV1(private val matchService: MatchService) {
 
     @PostMapping
     @Operation(summary = "Cria uma nova partida", description = "Salva a partida no MongoDB e gera um evento de Outbox.")
-    fun createMatch(@Valid @RequestBody request: CreateMatchRequest): ResponseEntity<Match> {
-        val createdMatch = matchService.createMatch(request, "organizerId")
+    fun createMatch(@Valid @RequestBody request: CreateMatchRequest, principal: Principal): ResponseEntity<Match> {
+        val firebaseId = principal.name
+        val createdMatch = matchService.createMatch(request, firebaseId)
         return ResponseEntity.ok(createdMatch)
     }
 
@@ -38,12 +39,11 @@ class MatchControllerV1(private val matchService: MatchService) {
     }
 
     @PatchMapping("/{id}/join")
-    fun joinMatch(@PathVariable id: String): ResponseEntity<Any> {
-        // Simulando o usuário logado (depois virá do SecurityContext)
-        val currentUserId = "user_icaro_789"
+    fun joinMatch(@PathVariable id: String, principal: Principal): ResponseEntity<Any> {
+        val firebaseId = principal.name
 
         return try {
-            val updatedMatch = matchService.joinMatch(id, currentUserId)
+            val updatedMatch = matchService.joinMatch(id, firebaseId)
             ResponseEntity.ok(updatedMatch)
         } catch (e: NoSuchElementException) {
             ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to e.message))
