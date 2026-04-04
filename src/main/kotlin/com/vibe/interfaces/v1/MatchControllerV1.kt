@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -34,5 +35,20 @@ class MatchControllerV1(private val matchService: MatchService) {
         val userLocation = GeoJsonPoint(longitude, latitude)
         val matches = matchService.searchMatches(userLocation, distanceMeters, sport)
         return ResponseEntity.ok(matches)
+    }
+
+    @PatchMapping("/{id}/join")
+    fun joinMatch(@PathVariable id: String): ResponseEntity<Any> {
+        // Simulando o usuário logado (depois virá do SecurityContext)
+        val currentUserId = "user_icaro_789"
+
+        return try {
+            val updatedMatch = matchService.joinMatch(id, currentUserId)
+            ResponseEntity.ok(updatedMatch)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to e.message))
+        } catch (e: IllegalStateException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("error" to e.message))
+        }
     }
 }

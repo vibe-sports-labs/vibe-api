@@ -1,42 +1,39 @@
 package com.vibe.infrastructure.messaging
 
-import com.mongodb.client.model.changestream.ChangeStreamDocument
-import com.vibe.domain.OutboxEntry
+import com.vibe.infrastructure.configuration.RabbitMQConfig.Companion.MATCH_EVENTS_EXCHANGE
+import com.vibe.infrastructure.repository.OutboxRepository
+import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
-import org.springframework.context.annotation.Configuration
-import org.springframework.data.mongodb.core.messaging.ChangeStreamRequest
-import org.springframework.data.mongodb.core.messaging.MessageListener
-import org.springframework.data.mongodb.core.messaging.MessageListenerContainer
-import jakarta.annotation.PostConstruct
-import org.bson.Document
+import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.stereotype.Component
 
-@Configuration
+
+@Component
 class OutboxRelay(
-    private val container: MessageListenerContainer,
+    private val outboxRepository: OutboxRepository,
     private val rabbitTemplate: RabbitTemplate
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
-    @PostConstruct
-    fun startListening() {
-        val request = ChangeStreamRequest.builder(MessageListener<ChangeStreamDocument<Document>, OutboxEntry> { message ->
-            val outbox = message.body
+    @Scheduled(fixedDelay = 5000)
+    fun processOutbox() {
+        val pendingEvents = outboxRepository.findByProcessedFalse()
 
-            if (outbox != null) {
-                try {
-                    rabbitTemplate.convertAndSend(
-                        "vibe.exchange",
-                        "vibe.event.${outbox.type}",
-                        outbox.payload
-                    )
-                    println("🚀 [Vibe-Relay] Evento enviado: ${outbox.type} | ID: ${outbox.aggregateId}")
-                } catch (e: Exception) {
-                    println("❌ [Vibe-Relay] Erro ao enviar para RabbitMQ: ${e.message}")
-                }
+        if (pendingEvents.isNotEmpty()) {
+            logger.info("Encontrados ${pendingEvents.size} eventos para processar.")
+        }
+
+        pendingEvents.forEach { event ->
+            try {
+                rabbitTemplate.convertAndSend(MATCH_EVENTS_EXCHANGE, event.type.name, event.payload)
+
+                event.processed = true
+                outboxRepository.save(event)
+
+                logger.info("✅ Evento ${event.type} enviado para o organizador!")
+            } catch (e: Exception) {
+                logger.error("❌ Erro ao enviar evento: ${e.message}. Tentará novamente em 5s.")
             }
-        })
-            .collection("outbox")
-            .build()
-
-        container.register(request, OutboxEntry::class.java)
+        }
     }
 }
