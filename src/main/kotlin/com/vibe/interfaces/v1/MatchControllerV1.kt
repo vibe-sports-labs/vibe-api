@@ -2,8 +2,10 @@ package com.vibe.interfaces.v1
 
 import com.vibe.application.service.MatchService
 import com.vibe.domain.Match
+import com.vibe.interfaces.v1.dto.CreateMatchRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -16,8 +18,8 @@ class MatchControllerV1(private val matchService: MatchService) {
 
     @PostMapping
     @Operation(summary = "Cria uma nova partida", description = "Salva a partida no MongoDB e gera um evento de Outbox.")
-    fun createMatch(@RequestBody match: Match): ResponseEntity<Match> {
-        val createdMatch = matchService.createMatch(match)
+    fun createMatch(@Valid @RequestBody request: CreateMatchRequest): ResponseEntity<Match> {
+        val createdMatch = matchService.createMatch(request, "organizerId")
         return ResponseEntity.ok(createdMatch)
     }
 

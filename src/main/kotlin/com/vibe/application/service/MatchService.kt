@@ -4,6 +4,7 @@ import com.vibe.domain.Match
 import com.vibe.domain.OutboxEntry
 import com.vibe.infrastructure.repository.MatchRepository
 import com.vibe.infrastructure.repository.OutboxRepository
+import com.vibe.interfaces.v1.dto.CreateMatchRequest
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -11,29 +12,26 @@ import tools.jackson.databind.ObjectMapper
 
 @Service
 class MatchService(
-    private val matchRepository: MatchRepository,
-    private val outboxRepository: OutboxRepository,
-    private val objectMapper: ObjectMapper
+    private val matchRepository: MatchRepository
 ) {
     @Transactional
-    fun createMatch(match: Match): Match {
-        val savedMatch = matchRepository.save(match)
+    fun createMatch(request: CreateMatchRequest, organizerId: String): Match {
+        val geoPoint = GeoJsonPoint(request.longitude, request.latitude)
 
-        val matchCreatedEvent = mapOf(
-            "matchId" to savedMatch.id,
-            "organizerId" to savedMatch.organizerId,
-            "title" to savedMatch.title
+        val match = Match(
+            title = request.title,
+            organizerId = organizerId,
+            location = geoPoint,
+            addressName = request.addressName,
+            startDateTime = request.startDateTime,
+            maxPlayers = request.maxPlayers,
+            entryFee = request.entryFee ?: java.math.BigDecimal.ZERO,
+            sportId = request.sportId,
+            endSubscriptionDate = request.endSubscriptionDate,
+            currentPlayers = mutableListOf(organizerId)
         )
 
-        val outboxEntry = OutboxEntry(
-            aggregateId = savedMatch.id ?: "",
-            type = "MATCH_CREATED",
-            payload = objectMapper.writeValueAsString(matchCreatedEvent)
-        )
-
-        outboxRepository.save(outboxEntry)
-
-        return savedMatch
+        return matchRepository.save(match)
     }
 
     fun searchMatches(location: GeoJsonPoint, distanceMeters: Double, sport: String?): List<Match> {
