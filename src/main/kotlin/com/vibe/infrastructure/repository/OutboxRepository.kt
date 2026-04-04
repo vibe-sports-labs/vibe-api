@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface OutboxRepository: MongoRepository<OutboxEntry, String> {
+    fun findByProcessedFalse(): List<OutboxEntry>
 }

@@ -1,18 +1,18 @@
 package com.vibe.application.service
 
 import com.vibe.domain.Match
-import com.vibe.domain.OutboxEntry
+import com.vibe.domain.enums.MatchStatus
+import com.vibe.domain.enums.OutboxEventType
 import com.vibe.infrastructure.repository.MatchRepository
-import com.vibe.infrastructure.repository.OutboxRepository
 import com.vibe.interfaces.v1.dto.CreateMatchRequest
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import tools.jackson.databind.ObjectMapper
 
 @Service
 class MatchService(
-    private val matchRepository: MatchRepository
+    private val matchRepository: MatchRepository,
+    private val outboxService: OutboxService
 ) {
     @Transactional
     fun createMatch(request: CreateMatchRequest, organizerId: String): Match {
@@ -40,5 +40,31 @@ class MatchService(
         } else {
             matchRepository.findByLocationNear(location, distanceMeters)
         }
+    }
+
+    @Transactional
+    fun joinMatch(matchId: String, userId: String): Match {
+        val match = matchRepository.findById(matchId)
+            .orElseThrow { NoSuchElementException("Partida não encontrada.") }
+
+        if (match.currentPlayers.size >= match.maxPlayers) {
+            throw IllegalStateException("A partida já está lotada.")
+        }
+
+        if (match.currentPlayers.contains(userId)) {
+            throw IllegalStateException("Você já está inscrito nesta partida.")
+        }
+
+        match.currentPlayers.add(userId)
+
+        if (match.currentPlayers.size == match.maxPlayers) {
+            match.status = MatchStatus.FULL
+        }
+
+        val savedMatch = matchRepository.save(match)
+
+        outboxService.saveEvent(savedMatch.id, OutboxEventType.MATCH_JOIN, savedMatch)
+
+        return savedMatch
     }
 }

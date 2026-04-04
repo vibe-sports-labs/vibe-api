@@ -1,6 +1,6 @@
 package com.vibe.domain
 
-import com.vibe.domain.enums.Status
+import com.vibe.domain.enums.MatchStatus
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
@@ -26,9 +26,9 @@ data class Match(
     val maxPlayers: Int,
     val currentPlayers: MutableList<String> = mutableListOf(),
     val entryFee: BigDecimal? = null,
-    val status: Status = Status.OPEN,
+    var status: MatchStatus = MatchStatus.OPEN,
     @CreatedDate
     val createdAt: LocalDateTime = LocalDateTime.now(),
     @LastModifiedDate
-    val updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null
 )
