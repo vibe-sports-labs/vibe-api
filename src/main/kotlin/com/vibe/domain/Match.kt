@@ -1,7 +1,9 @@
 package com.vibe.domain
 
 import com.vibe.domain.enums.Status
+import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed
@@ -24,5 +26,9 @@ data class Match(
     val maxPlayers: Int,
     val currentPlayers: MutableList<String> = mutableListOf(),
     val entryFee: BigDecimal? = null,
-    val status: Status = Status.OPEN
+    val status: Status = Status.OPEN,
+    @CreatedDate
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+    @LastModifiedDate
+    val updatedAt: LocalDateTime? = null
 )
